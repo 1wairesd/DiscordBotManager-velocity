@@ -1,0 +1,9 @@
+{
+  "id": "discordbotmanager",
+  "name": "DiscordBotManager",
+  "version": "1.0",
+  "description": "Описание вашего плагина",
+  "authors": ["1wairesd"],
+  "dependencies": [],
+  "main": "com.wairesd.DiscordBotManager.velocity.DiscordBotManagerVelocity"
+}

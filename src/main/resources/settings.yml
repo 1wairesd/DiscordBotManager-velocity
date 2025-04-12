@@ -1,0 +1,8 @@
+Discord:
+  Bot-token: "your-bot-token"
+
+websocket:
+  port: 8080
+
+debug: false
+forwarding-secret-file: "secret.complete.code"

@@ -1,0 +1,4 @@
+usage-admin-command: "&cUsage: /discordbotmanager reload"
+no-permission: "&cYou do not have permission to use this command."
+reload-success: "&aSettings reloaded successfully."
+command-unavailable: "Command unavailable: plugin not connected."
