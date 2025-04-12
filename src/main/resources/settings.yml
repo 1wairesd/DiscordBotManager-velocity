@@ -1,5 +1,8 @@
 Discord:
   Bot-token: "your-bot-token"
+  activity:
+    type: "playing"
+    message: "Velocity Server"
 
 websocket:
   port: 8080
