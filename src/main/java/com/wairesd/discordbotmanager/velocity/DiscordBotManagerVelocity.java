@@ -19,7 +19,6 @@ import org.slf4j.Logger;
 
 import java.nio.file.Path;
 
-// Main plugin class for DiscordBotManager on Velocity. Initializes the bot, WebSocket, and commands.
 @Plugin(id = "discordbotmanager", name = "DiscordBotManager", version = "1.0", authors = {"wairesd"})
 public class DiscordBotManagerVelocity {
     private final Logger logger;
@@ -43,9 +42,10 @@ public class DiscordBotManagerVelocity {
         wsServer = new VelocityWebSocketServer(logger);
         wsServer.initialize();
 
+        // Passing the plugin instance to the command
         proxy.getCommandManager().register(
                 proxy.getCommandManager().metaBuilder("discordbotmanager").build(),
-                new AdminCommand()
+                new AdminCommand(this)
         );
 
         String token = Settings.getBotToken();
@@ -56,15 +56,43 @@ public class DiscordBotManagerVelocity {
         try {
             discordBotListener = new DiscordBotListener(this, wsServer, logger);
             ResponseHandler.init(discordBotListener, logger);
+
+            // Установка активности из конфигурации
+            Activity activity = createActivity();
             jda = JDABuilder.createDefault(token)
-                    .setActivity(Activity.playing("Velocity Server"))
+                    .setActivity(activity)
                     .addEventListeners(discordBotListener)
                     .build()
                     .awaitReady();
             wsServer.setJda(jda);
-                logger.info("Discord bot successfully started.");
+            logger.info("Discord bot successfully started.");
         } catch (Exception e) {
             logger.error("Error initializing JDA: {}", e.getMessage(), e);
+        }
+    }
+
+    // Создание объекта Activity на основе настроек
+    private Activity createActivity() {
+        String activityType = Settings.getActivityType().toLowerCase();
+        String activityMessage = Settings.getActivityMessage();
+        switch (activityType) {
+            case "playing":
+                return Activity.playing(activityMessage);
+            case "watching":
+                return Activity.watching(activityMessage);
+            case "listening":
+                return Activity.listening(activityMessage);
+            default:
+                return Activity.playing(activityMessage); // default
+        }
+    }
+
+    // Updating the bot activity
+    public void updateActivity() {
+        if (jda != null) {
+            Activity activity = createActivity();
+            jda.getPresence().setActivity(activity);
+            logger.info("Bot activity updated to: {} {}", Settings.getActivityType(), Settings.getActivityMessage());
         }
     }
 
