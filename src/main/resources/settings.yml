@@ -4,8 +4,10 @@ Discord:
     type: "playing"
     message: "Velocity Server"
 
-websocket:
+netty:
   port: 8080
 
 debug: false
 forwarding-secret-file: "secret.complete.code"
+
+view_connected_banned_ip: false

@@ -18,14 +18,12 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
-    <!-- Профиль для релиза (по желанию) -->
     <profiles>
         <profile>
             <id>release</id>
             <build>
                 <defaultGoal>clean package</defaultGoal>
                 <resources>
-                    <!-- Ресурсы с фильтрацией (исключая JSON) -->
                     <resource>
                         <directory>${project.basedir}/src/main/resources</directory>
                         <filtering>true</filtering>
@@ -33,7 +31,6 @@
                             <exclude>**/*.json</exclude>
                         </excludes>
                     </resource>
-                    <!-- Ресурсы без фильтрации (только JSON) -->
                     <resource>
                         <directory>${project.basedir}/src/main/resources</directory>
                         <filtering>false</filtering>
@@ -48,7 +45,6 @@
 
     <build>
         <defaultGoal>clean package</defaultGoal>
-        <!-- Настройки ресурсов по умолчанию -->
         <resources>
             <resource>
                 <directory>${project.basedir}/src/main/resources</directory>
@@ -57,7 +53,6 @@
         </resources>
 
         <plugins>
-            <!-- Плагин компиляции -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -68,7 +63,6 @@
                 </configuration>
             </plugin>
 
-            <!-- Плагин для фильтрации исходников (templating) -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>templating-maven-plugin</artifactId>
@@ -102,27 +96,15 @@
                 <version>3.4.1</version>
                 <executions>
                     <execution>
-                        <!-- Запускаем shade при фазе package -->
                         <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <!-- Не создаём отдельный dependency-reduced-pom -->
                             <createDependencyReducedPom>false</createDependencyReducedPom>
 
-                            <!-- Подкладываем зашитый jar как отдельный файл с классификатором "shaded" -->
                             <shadedArtifactAttached>true</shadedArtifactAttached>
                             <shadedClassifierName>shaded</shadedClassifierName>
-
-                            <!-- Если хотите релокацию пакетов (чтобы избежать конфликтов), раскомментируйте:
-                            <relocations>
-                                <relocation>
-                                    <pattern>net.dv8tion.jda</pattern>
-                                    <shadedPattern>me.wairesd.libs.net.dv8tion.jda</shadedPattern>
-                                </relocation>
-                            </relocations>
-                            -->
                         </configuration>
                     </execution>
                 </executions>
@@ -148,6 +130,16 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.xerial</groupId>
+            <artifactId>sqlite-jdbc</artifactId>
+            <version>3.49.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+            <version>4.2.0.Final</version>
+        </dependency>
+        <dependency>
             <groupId>net.dv8tion</groupId>
             <artifactId>JDA</artifactId>
             <version>5.3.0</version>
@@ -156,26 +148,6 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>3.17.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.moquette-io.moquette</groupId>
-            <artifactId>moquette-broker</artifactId>
-            <version>0.12.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.paho</groupId>
-            <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
-            <version>1.2.5</version>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.paho</groupId>
-            <artifactId>org.eclipse.paho.mqttv5.client</artifactId>
-            <version>1.2.5</version>
-        </dependency>
-        <dependency>
-            <groupId>org.java-websocket</groupId>
-            <artifactId>Java-WebSocket</artifactId>
-            <version>1.6.0</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>

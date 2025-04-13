@@ -2,7 +2,7 @@
   "id": "discordbotmanager",
   "name": "DiscordBotManager",
   "version": "1.0",
-  "description": "Описание вашего плагина",
+  "description": "Description of your plugin",
   "authors": ["1wairesd"],
   "dependencies": [],
   "main": "com.wairesd.DiscordBotManager.velocity.DiscordBotManagerVelocity"

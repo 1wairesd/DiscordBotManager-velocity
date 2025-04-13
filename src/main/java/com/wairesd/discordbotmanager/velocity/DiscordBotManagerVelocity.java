@@ -9,9 +9,10 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.wairesd.discordbotmanager.velocity.command.AdminCommand;
 import com.wairesd.discordbotmanager.velocity.config.Messages;
 import com.wairesd.discordbotmanager.velocity.config.Settings;
+import com.wairesd.discordbotmanager.velocity.database.DatabaseManager;
 import com.wairesd.discordbotmanager.velocity.discord.DiscordBotListener;
 import com.wairesd.discordbotmanager.velocity.discord.ResponseHandler;
-import com.wairesd.discordbotmanager.velocity.websocket.VelocityWebSocketServer;
+import com.wairesd.discordbotmanager.velocity.network.NettyServer;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -25,8 +26,9 @@ public class DiscordBotManagerVelocity {
     private final Path dataDirectory;
     private final ProxyServer proxy;
     private JDA jda;
-    private VelocityWebSocketServer wsServer;
+    private NettyServer nettyServer;
     private DiscordBotListener discordBotListener;
+    private DatabaseManager dbManager;
 
     @Inject
     public DiscordBotManagerVelocity(Logger logger, @DataDirectory Path dataDirectory, ProxyServer proxy) {
@@ -39,10 +41,13 @@ public class DiscordBotManagerVelocity {
     public void onProxyInitialization(ProxyInitializeEvent event) {
         Settings.init(dataDirectory);
         Messages.init(dataDirectory);
-        wsServer = new VelocityWebSocketServer(logger);
-        wsServer.initialize();
 
-        // Passing the plugin instance to the command
+        String dbPath = "jdbc:sqlite:" + dataDirectory.resolve("DiscordBotManager.db").toString();
+        dbManager = new DatabaseManager(dbPath);
+
+        nettyServer = new NettyServer(logger, dbManager);
+        new Thread(nettyServer::start, "Netty-Server-Thread").start();
+
         proxy.getCommandManager().register(
                 proxy.getCommandManager().metaBuilder("discordbotmanager").build(),
                 new AdminCommand(this)
@@ -54,24 +59,23 @@ public class DiscordBotManagerVelocity {
             return;
         }
         try {
-            discordBotListener = new DiscordBotListener(this, wsServer, logger);
+            discordBotListener = new DiscordBotListener(this, nettyServer, logger);
             ResponseHandler.init(discordBotListener, logger);
 
-            // Установка активности из конфигурации
             Activity activity = createActivity();
             jda = JDABuilder.createDefault(token)
                     .setActivity(activity)
                     .addEventListeners(discordBotListener)
                     .build()
                     .awaitReady();
-            wsServer.setJda(jda);
+
+            nettyServer.setJda(jda);
             logger.info("Discord bot successfully started.");
         } catch (Exception e) {
             logger.error("Error initializing JDA: {}", e.getMessage(), e);
         }
     }
 
-    // Создание объекта Activity на основе настроек
     private Activity createActivity() {
         String activityType = Settings.getActivityType().toLowerCase();
         String activityMessage = Settings.getActivityMessage();
@@ -83,11 +87,10 @@ public class DiscordBotManagerVelocity {
             case "listening":
                 return Activity.listening(activityMessage);
             default:
-                return Activity.playing(activityMessage); // default
+                return Activity.playing(activityMessage);
         }
     }
 
-    // Updating the bot activity
     public void updateActivity() {
         if (jda != null) {
             Activity activity = createActivity();

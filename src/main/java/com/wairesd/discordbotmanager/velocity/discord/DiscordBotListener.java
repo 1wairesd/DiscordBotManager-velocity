@@ -6,7 +6,7 @@ import com.wairesd.discordbotmanager.velocity.DiscordBotManagerVelocity;
 import com.wairesd.discordbotmanager.velocity.config.Messages;
 import com.wairesd.discordbotmanager.velocity.config.Settings;
 import com.wairesd.discordbotmanager.velocity.model.RequestMessage;
-import com.wairesd.discordbotmanager.velocity.websocket.VelocityWebSocketServer;
+import com.wairesd.discordbotmanager.velocity.network.NettyServer;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.slf4j.Logger;
@@ -17,18 +17,18 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-// This class listens for Discord slash commands and forwards them to the WebSocket server.
+// Listens for Discord slash command interactions and forwards them to the Netty server.
 public class DiscordBotListener extends ListenerAdapter {
     private final DiscordBotManagerVelocity plugin;
-    private final VelocityWebSocketServer wsServer;
+    private final NettyServer nettyServer;
     private final Logger logger;
     private final ProxyServer proxy;
     private final Gson gson = new Gson();
     private final ConcurrentHashMap<UUID, SlashCommandInteractionEvent> pendingRequests = new ConcurrentHashMap<>();
 
-    public DiscordBotListener(DiscordBotManagerVelocity plugin, VelocityWebSocketServer wsServer, Logger logger) {
+    public DiscordBotListener(DiscordBotManagerVelocity plugin, NettyServer nettyServer, Logger logger) {
         this.plugin = plugin;
-        this.wsServer = wsServer;
+        this.nettyServer = nettyServer;
         this.logger = logger;
         this.proxy = plugin.getProxy();
     }
@@ -40,10 +40,9 @@ public class DiscordBotListener extends ListenerAdapter {
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
         String command = event.getName();
-        var conn = wsServer.getCommandToConnection().get(command);
+        var channel = nettyServer.getCommandToChannel().get(command);
 
-        // Check if the WebSocket connection is available
-        if (conn == null || !conn.isOpen()) {
+        if (channel == null || !channel.isActive()) {
             event.reply(Messages.getMessage("command-unavailable")).setEphemeral(true).queue();
             return;
         }
@@ -52,28 +51,19 @@ public class DiscordBotListener extends ListenerAdapter {
         pendingRequests.put(requestId, event);
         event.deferReply().queue();
 
-        // Collect command options
         Map<String, String> options = new HashMap<>();
-        for (var opt : event.getOptions()) {
-            options.put(opt.getName(), opt.getAsString());
-        }
+        event.getOptions().forEach(opt -> options.put(opt.getName(), opt.getAsString()));
 
-        // Send request to WebSocket server
         RequestMessage request = new RequestMessage("request", command, options, requestId.toString());
         String message = gson.toJson(request);
-        wsServer.sendRequest(conn, message);
+        nettyServer.sendMessage(channel, message);
 
-        if (Settings.isDebug()) {
-            logger.debug("Sent request: {}", message);
-        }
+        if (Settings.isDebug()) logger.debug("Sent request: {}", message);
 
-        // Schedule a timeout for the request
         proxy.getScheduler().buildTask(plugin, () -> {
             if (pendingRequests.remove(requestId) != null) {
                 event.getHook().sendMessage("Response timeout.").queue();
-                if (Settings.isDebug()) {
-                    logger.warn("Request timeout: {}", requestId);
-                }
+                if (Settings.isDebug()) logger.warn("Request timeout: {}", requestId);
             }
         }).delay(10, TimeUnit.SECONDS).schedule();
     }
