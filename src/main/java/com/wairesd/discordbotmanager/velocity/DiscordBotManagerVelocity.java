@@ -16,9 +16,11 @@ import com.wairesd.discordbotmanager.velocity.network.NettyServer;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.requests.GatewayIntent;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
+import java.util.EnumSet;
 
 @Plugin(id = "discordbotmanager", name = "DiscordBotManager", version = "1.0", authors = {"wairesd"})
 public class DiscordBotManagerVelocity {
@@ -64,6 +66,11 @@ public class DiscordBotManagerVelocity {
 
             Activity activity = createActivity();
             jda = JDABuilder.createDefault(token)
+                    .enableIntents(EnumSet.of(
+                            GatewayIntent.GUILD_MESSAGES,
+                            GatewayIntent.DIRECT_MESSAGES,
+                            GatewayIntent.MESSAGE_CONTENT
+                    ))
                     .setActivity(activity)
                     .addEventListeners(discordBotListener)
                     .build()
@@ -80,26 +87,20 @@ public class DiscordBotManagerVelocity {
         String activityType = Settings.getActivityType().toLowerCase();
         String activityMessage = Settings.getActivityMessage();
         switch (activityType) {
-            case "playing":
-                return Activity.playing(activityMessage);
-            case "watching":
-                return Activity.watching(activityMessage);
-            case "listening":
-                return Activity.listening(activityMessage);
-            default:
-                return Activity.playing(activityMessage);
+            case "playing": return Activity.playing(activityMessage);
+            case "watching": return Activity.watching(activityMessage);
+            case "listening": return Activity.listening(activityMessage);
+            default: return Activity.playing(activityMessage);
         }
     }
 
     public void updateActivity() {
         if (jda != null) {
-            Activity activity = createActivity();
-            jda.getPresence().setActivity(activity);
+            jda.getPresence().setActivity(createActivity());
             logger.info("Bot activity updated to: {} {}", Settings.getActivityType(), Settings.getActivityMessage());
         }
     }
 
-    public ProxyServer getProxy() {
-        return proxy;
-    }
+    public ProxyServer getProxy() { return proxy; }
+    public NettyServer getNettyServer() { return nettyServer; }
 }

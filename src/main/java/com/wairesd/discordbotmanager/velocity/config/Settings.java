@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Manages configuration settings from settings.yml for Velocity.
+ * Manages loading and retrieving settings from settings.yml for Velocity.
  */
 public class Settings {
     private static final Logger logger = LoggerFactory.getLogger(Settings.class);
@@ -20,14 +20,12 @@ public class Settings {
     private static Map<String, Object> config;
     private static SecretManager secretManager;
 
-    /** Initializes settings with the data directory. */
     public static void init(Path dataDir) {
         dataDirectory = dataDir;
         load();
         secretManager = new SecretManager(dataDirectory, getForwardingSecretFile());
     }
 
-    /** Loads settings.yml asynchronously with validation. */
     public static void load() {
         CompletableFuture.runAsync(() -> {
             try {
@@ -35,11 +33,8 @@ public class Settings {
                 if (!Files.exists(configPath)) {
                     Files.createDirectories(dataDirectory);
                     try (InputStream in = Settings.class.getClassLoader().getResourceAsStream("settings.yml")) {
-                        if (in != null) {
-                            Files.copy(in, configPath);
-                        } else {
-                            logger.error("settings.yml not found in resources!");
-                        }
+                        if (in != null) Files.copy(in, configPath);
+                        else logger.error("settings.yml not found in resources!");
                     }
                 }
                 config = new Yaml().load(Files.newInputStream(configPath));
@@ -51,43 +46,78 @@ public class Settings {
         });
     }
 
-    /** Reloads settings and updates secret manager. */
     public static void reload() {
         load();
         secretManager = new SecretManager(dataDirectory, getForwardingSecretFile());
         Messages.reload();
     }
 
-    /** Validates essential configuration keys. */
     private static void validateConfig() {
         if (config == null || !config.containsKey("Discord") || getBotToken() == null) {
             logger.warn("Bot-token missing in settings.yml, using default behavior");
         }
     }
 
-    public static boolean isDebug() { return config != null && (boolean) config.getOrDefault("debug", false); }
+    // Debug options
+    public static boolean isDebugConnections() {
+        Map<String, Object> debug = config != null ? (Map<String, Object>) config.get("debug") : null;
+        return debug != null && (boolean) debug.getOrDefault("debug-connections", true);
+    }
+
+    public static boolean isDebugClientResponses() {
+        Map<String, Object> debug = config != null ? (Map<String, Object>) config.get("debug") : null;
+        return debug != null && (boolean) debug.getOrDefault("debug-client-responses", false);
+    }
+
+    public static boolean isDebugPluginConnections() {
+        Map<String, Object> debug = config != null ? (Map<String, Object>) config.get("debug") : null;
+        return debug != null && (boolean) debug.getOrDefault("debug-plugin-connections", false);
+    }
+
+    public static boolean isDebugCommandRegistrations() {
+        Map<String, Object> debug = config != null ? (Map<String, Object>) config.get("debug") : null;
+        return debug != null && (boolean) debug.getOrDefault("debug-command-registrations", false);
+    }
+
+    public static boolean isDebugAuthentication() {
+        Map<String, Object> debug = config != null ? (Map<String, Object>) config.get("debug") : null;
+        return debug != null && (boolean) debug.getOrDefault("debug-authentication", true);
+    }
+
+    public static boolean isDebugErrors() {
+        Map<String, Object> debug = config != null ? (Map<String, Object>) config.get("debug") : null;
+        return debug != null && (boolean) debug.getOrDefault("debug-errors", true);
+    }
+
+    // Configuration getters
     public static String getBotToken() {
         Map<String, Object> discord = config != null ? (Map<String, Object>) config.get("Discord") : null;
         return discord != null ? (String) discord.get("Bot-token") : null;
     }
+
     public static int getNettyPort() {
         Map<String, Object> netty = config != null ? (Map<String, Object>) config.get("netty") : null;
         return netty != null ? (int) netty.get("port") : 0;
     }
+
     public static String getForwardingSecretFile() {
         return config != null ? (String) config.getOrDefault("forwarding-secret-file", "secret.complete.code") : "secret.complete.code";
     }
+
     public static String getSecretCode() { return secretManager != null ? secretManager.getSecretCode() : null; }
+
     public static String getActivityType() {
         Map<String, Object> discord = config != null ? (Map<String, Object>) config.get("Discord") : null;
         Map<String, String> activity = discord != null ? (Map<String, String>) discord.get("activity") : null;
         return activity != null ? activity.getOrDefault("type", "playing") : "playing";
     }
+
     public static String getActivityMessage() {
         Map<String, Object> discord = config != null ? (Map<String, Object>) config.get("Discord") : null;
         Map<String, String> activity = discord != null ? (Map<String, String>) discord.get("activity") : null;
         return activity != null ? activity.getOrDefault("message", "Velocity Server") : "Velocity Server";
     }
+
     public static boolean isViewConnectedBannedIp() {
         return config != null && (boolean) config.getOrDefault("view_connected_banned_ip", false);
     }

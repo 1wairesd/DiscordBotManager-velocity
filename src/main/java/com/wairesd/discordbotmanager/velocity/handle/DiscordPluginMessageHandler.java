@@ -7,7 +7,9 @@ import org.slf4j.Logger;
 
 import java.nio.charset.StandardCharsets;
 
-// This class handles plugin messages received from Bukkit plugins via Velocity.
+/**
+ * Handles plugin messages received from Bukkit plugins via Velocity.
+ */
 public class DiscordPluginMessageHandler {
     private final Logger logger;
 
@@ -19,7 +21,7 @@ public class DiscordPluginMessageHandler {
     public void onPluginMessage(PluginMessageEvent event) {
         if ("discord:message".equals(event.getIdentifier().getId())) {
             String message = new String(event.getData(), StandardCharsets.UTF_8);
-            if (Settings.isDebug()) {
+            if (Settings.isDebugPluginConnections()) {
                 logger.info("Received message from Bukkit plugin: {}", message);
             }
             event.setResult(PluginMessageEvent.ForwardResult.handled());

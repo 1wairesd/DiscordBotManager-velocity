@@ -8,7 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.SecureRandom;
 
-// This class manages the secret code used for WebSocket authentication.
+// This class manages the secret code used for Netty authentication.
 public class SecretManager {
     private static final Logger logger = LoggerFactory.getLogger(SecretManager.class);
     private final Path secretFilePath;

@@ -7,7 +7,14 @@ Discord:
 netty:
   port: 8080
 
-debug: false
 forwarding-secret-file: "secret.complete.code"
 
 view_connected_banned_ip: false
+
+debug:
+  debug-connections: true          # Logue customer connection and disconnecting
+  debug-client-responses: false    # Logue requests and answers from customers
+  debug-plugin-connections: true   # Login connecting plugins to customers
+  debug-command-registrations: false # Log in the registration events of the teams
+  debug-authentication: true       # Log in authentication attempts and their results
+  debug-errors: true               # Log in errors and exceptions

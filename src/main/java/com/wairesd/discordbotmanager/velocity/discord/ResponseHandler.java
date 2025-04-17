@@ -7,7 +7,9 @@ import org.slf4j.Logger;
 import java.awt.Color;
 import java.util.UUID;
 
-// This class handles responses from the WebSocket server and updates Discord interactions.
+/**
+ * Handles responses from the Netty server and updates Discord interactions.
+ */
 public class ResponseHandler {
     private static DiscordBotListener listener;
     private static Logger logger;
@@ -22,12 +24,12 @@ public class ResponseHandler {
             UUID requestId = UUID.fromString(requestIdStr);
             var event = listener.getPendingRequests().remove(requestId);
             if (event == null) {
-                if (Settings.isDebug()) {
+                if (Settings.isDebugErrors()) {
                     logger.warn("Request with ID {} not found.", requestIdStr);
                 }
                 return;
             }
-            if (Settings.isDebug()) {
+            if (Settings.isDebugClientResponses()) {
                 logger.info("Received response for request {}: {}", requestIdStr, response);
             }
             var embed = new EmbedBuilder()
@@ -36,7 +38,9 @@ public class ResponseHandler {
                     .build();
             event.getHook().sendMessageEmbeds(embed).queue();
         } catch (IllegalArgumentException e) {
-            logger.error("Invalid UUID in response: {}", requestIdStr, e);
+            if (Settings.isDebugErrors()) {
+                logger.error("Invalid UUID in response: {}", requestIdStr, e);
+            }
         }
     }
 }

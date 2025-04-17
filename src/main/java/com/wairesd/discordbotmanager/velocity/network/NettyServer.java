@@ -1,12 +1,8 @@
 package com.wairesd.discordbotmanager.velocity.network;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import com.wairesd.discordbotmanager.velocity.config.Settings;
 import com.wairesd.discordbotmanager.velocity.database.DatabaseManager;
-import com.wairesd.discordbotmanager.velocity.discord.ResponseHandler;
-import com.wairesd.discordbotmanager.velocity.model.RegisterMessage;
-import com.wairesd.discordbotmanager.velocity.model.ResponseMessage;
+import com.wairesd.discordbotmanager.velocity.model.CommandDefinition;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -18,20 +14,24 @@ import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import org.slf4j.Logger;
 
-import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Manages the Netty server for handling WebSocket connections in Velocity.
+ * Manages the Netty server for communication with Bukkit servers.
  */
 public class NettyServer {
     private final Logger logger;
     private EventLoopGroup bossGroup;
     private EventLoopGroup workerGroup;
     private Channel serverChannel;
-    private final Gson gson = new Gson();
-    private final ConcurrentHashMap<String, Channel> commandToChannel = new ConcurrentHashMap<>();
+    private final Map<String, CommandDefinition> commandDefinitions = new HashMap<>();
+    private final Map<String, List<ServerInfo>> commandToServers = new HashMap<>();
+    private final Map<Channel, String> channelToServerName = new ConcurrentHashMap<>();
     private volatile Object jda;
     private final int port = Settings.getNettyPort();
     private final DatabaseManager dbManager;
@@ -41,10 +41,27 @@ public class NettyServer {
         this.dbManager = dbManager;
     }
 
+    /**
+     * Sets the JDA instance for Discord integration.
+     */
     public void setJda(Object jda) { this.jda = jda; }
-    public ConcurrentHashMap<String, Channel> getCommandToChannel() { return commandToChannel; }
 
-    /** Starts the Netty server on the configured port. */
+    public Map<String, List<ServerInfo>> getCommandToServers() { return commandToServers; }
+
+    public List<ServerInfo> getServersForCommand(String command) {
+        return commandToServers.getOrDefault(command, new ArrayList<>());
+    }
+
+    public Map<String, CommandDefinition> getCommandDefinitions() { return commandDefinitions; }
+
+    /**
+     * Represents server information with a name and channel.
+     */
+    public record ServerInfo(String serverName, Channel channel) {}
+
+    /**
+     * Starts the Netty server to listen for incoming connections.
+     */
     public void start() {
         bossGroup = new NioEventLoopGroup(1);
         workerGroup = new NioEventLoopGroup();
@@ -59,7 +76,7 @@ public class NettyServer {
                             ch.pipeline().addLast("stringDecoder", new StringDecoder(StandardCharsets.UTF_8));
                             ch.pipeline().addLast("frameEncoder", new LengthFieldPrepender(2));
                             ch.pipeline().addLast("stringEncoder", new StringEncoder(StandardCharsets.UTF_8));
-                            ch.pipeline().addLast("handler", new NettyServerHandler(commandToChannel, logger, jda, dbManager));
+                            ch.pipeline().addLast("handler", new NettyServerHandler(NettyServer.this, logger, jda, dbManager));
                         }
                     })
                     .option(ChannelOption.SO_BACKLOG, 128)
@@ -67,118 +84,55 @@ public class NettyServer {
 
             ChannelFuture future = bootstrap.bind(port).sync();
             serverChannel = future.channel();
-            logger.info("Netty server started on port {}", port);
+            if (Settings.isDebugConnections()) {
+                logger.info("Netty server started on port {}", port);
+            }
             serverChannel.closeFuture().sync();
         } catch (InterruptedException e) {
-            logger.error("Netty server interrupted", e);
+            if (Settings.isDebugErrors()) {
+                logger.error("Netty server interrupted", e);
+            }
             Thread.currentThread().interrupt();
         } finally {
             shutdown();
         }
     }
 
-    /** Shuts down the Netty server gracefully. */
+    /**
+     * Shuts down the Netty server gracefully.
+     */
     public void shutdown() {
         if (bossGroup != null) bossGroup.shutdownGracefully();
         if (workerGroup != null) workerGroup.shutdownGracefully();
-        logger.info("Netty server shutdown complete");
-    }
-
-    /** Sends a message to a specific channel if active. */
-    public void sendMessage(Channel channel, String message) {
-        if (channel != null && channel.isActive()) {
-            channel.writeAndFlush(message);
-            if (Settings.isDebug()) logger.debug("Sent message: {} to {}", message, channel.remoteAddress());
-        } else {
-            logger.warn("Attempt to send message to inactive channel: {}", channel != null ? channel.remoteAddress() : "null");
+        if (Settings.isDebugConnections()) {
+            logger.info("Netty server shutdown complete");
         }
     }
 
     /**
-     * Handles incoming connections and messages for the Netty server.
+     * Sends a message to the specified channel.
      */
-    private class NettyServerHandler extends SimpleChannelInboundHandler<String> {
-        private final Gson gson = new Gson();
-        private final ConcurrentHashMap<String, Channel> commandToChannel;
-        private final Logger logger;
-        private final Object jda;
-        private final DatabaseManager dbManager;
-        private boolean authenticated = false;
-
-        public NettyServerHandler(ConcurrentHashMap<String, Channel> commandToChannel, Logger logger, Object jda, DatabaseManager dbManager) {
-            this.commandToChannel = commandToChannel;
-            this.logger = logger;
-            this.jda = jda;
-            this.dbManager = dbManager;
+    public void sendMessage(Channel channel, String message) {
+        if (channel != null && channel.isActive()) {
+            channel.writeAndFlush(message);
         }
+    }
 
-        @Override
-        public void channelActive(ChannelHandlerContext ctx) {
-            String ip = ((InetSocketAddress) ctx.channel().remoteAddress()).getAddress().getHostAddress();
-            dbManager.isBlocked(ip).thenAcceptAsync(isBlocked -> {
-                if (isBlocked) {
-                    if (Settings.isViewConnectedBannedIp()) {
-                        logger.warn("Blocked connection attempt from {}", ip);
+    /**
+     * Registers commands for a server and associates them with a channel.
+     */
+    public void registerCommands(String serverName, List<CommandDefinition> commands, Channel channel) {
+        for (var cmd : commands) {
+            if (commandDefinitions.containsKey(cmd.name())) {
+                CommandDefinition existing = commandDefinitions.get(cmd.name());
+                if (!existing.equals(cmd)) {
+                    if (Settings.isDebugErrors()) {
+                        logger.error("Command {} from server {} has different definition", cmd.name(), serverName);
                     }
-                    ctx.writeAndFlush("Error: IP blocked due to multiple failed attempts");
-                    ctx.close();
-                } else {
-                    logger.info("New connection from {}", ip);
-                    ctx.executor().schedule(() -> {
-                        if (!authenticated) {
-                            logger.warn("Client {} did not authenticate in time. Closing connection.", ip);
-                            ctx.writeAndFlush("Error: Authentication timeout");
-                            dbManager.incrementFailedAttempt(ip);
-                            ctx.close();
-                        }
-                    }, 10, java.util.concurrent.TimeUnit.SECONDS);
+                    continue;
                 }
-            }, ctx.executor());
-        }
-
-        @Override
-        protected void channelRead0(ChannelHandlerContext ctx, String msg) {
-            String ip = ctx.channel().remoteAddress().toString();
-            if (Settings.isDebug()) logger.debug("Received message from {}: {}", ip, msg);
-            try {
-                JsonObject json = gson.fromJson(msg, JsonObject.class);
-                String type = json.get("type").getAsString();
-                if ("register".equals(type)) {
-                    handleRegister(ctx, json, ip);
-                } else if ("response".equals(type)) {
-                    handleResponse(json);
-                } else {
-                    logger.warn("Unknown message type: {}", type);
-                }
-            } catch (Exception e) {
-                logger.error("Error processing message: {}", msg, e);
-            }
-        }
-
-        private void handleRegister(ChannelHandlerContext ctx, JsonObject json, String ip) {
-            if (!json.has("secret")) {
-                logger.warn("No secret code provided in register message from {}", ip);
-                ctx.writeAndFlush("Error: No secret code provided");
-                dbManager.incrementFailedAttempt(ip);
-                ctx.close();
-                return;
-            }
-            String receivedSecret = json.get("secret").getAsString();
-            String expectedSecret = Settings.getSecretCode();
-            if (expectedSecret == null || !expectedSecret.equals(receivedSecret)) {
-                logger.warn("Unknown plugin attempted to connect from {} with invalid secret code", ip);
-                ctx.writeAndFlush("Error: Invalid secret code");
-                dbManager.incrementFailedAttempt(ip);
-                ctx.close();
-                return;
-            }
-            authenticated = true;
-            dbManager.resetAttempts(ip);
-            logger.info("Client {} authenticated successfully", ip);
-
-            RegisterMessage regMsg = gson.fromJson(json, RegisterMessage.class);
-            for (var cmd : regMsg.commands()) {
-                commandToChannel.put(cmd.name(), ctx.channel());
+            } else {
+                commandDefinitions.put(cmd.name(), cmd);
                 if (jda != null) {
                     var cmdData = net.dv8tion.jda.api.interactions.commands.build.Commands.slash(cmd.name(), cmd.description());
                     for (var opt : cmd.options()) {
@@ -189,32 +143,55 @@ public class NettyServer {
                                 opt.required()
                         );
                     }
+                    switch (cmd.context()) {
+                        case "both":
+                            cmdData.setGuildOnly(false);
+                            break;
+                        case "dm":
+                            cmdData.setGuildOnly(false);
+                            break;
+                        case "server":
+                            cmdData.setGuildOnly(true);
+                            break;
+                        default:
+                            if (Settings.isDebugErrors()) {
+                                logger.warn("Unknown context '{}' for command '{}'. Defaulting to 'both'.", cmd.context(), cmd.name());
+                            }
+                            cmdData.setGuildOnly(false);
+                            break;
+                    }
                     ((net.dv8tion.jda.api.JDA) jda).upsertCommand(cmdData).queue();
-                    logger.info("Registered command: {}", cmd.name());
-                } else {
-                    logger.warn("JDA not set, cannot register command: {}", cmd.name());
+                    if (Settings.isDebugCommandRegistrations()) {
+                        logger.info("Registered command: {} with context: {}", cmd.name(), cmd.context());
+                    }
                 }
             }
+            commandToServers.computeIfAbsent(cmd.name(), k -> new ArrayList<>())
+                    .add(new ServerInfo(serverName, channel));
         }
+    }
 
-        private void handleResponse(JsonObject json) {
-            if (!authenticated) {
-                logger.warn("Unauthenticated client sent response");
-                return;
-            }
-            ResponseMessage respMsg = gson.fromJson(json, ResponseMessage.class);
-            ResponseHandler.handleResponse(respMsg.requestId(), respMsg.response());
+    /**
+     * Removes a server from the command mappings when its channel closes.
+     */
+    public void removeServer(Channel channel) {
+        for (var entry : commandToServers.entrySet()) {
+            entry.getValue().removeIf(serverInfo -> serverInfo.channel() == channel);
         }
+        channelToServerName.remove(channel);
+    }
 
-        @Override
-        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-            logger.error("Exception in Netty channel: {}", ctx.channel().remoteAddress(), cause);
-            ctx.close();
-        }
+    /**
+     * Sets the server name for a channel.
+     */
+    public void setServerName(Channel channel, String serverName) {
+        channelToServerName.put(channel, serverName);
+    }
 
-        @Override
-        public void channelInactive(ChannelHandlerContext ctx) {
-            logger.info("Connection closed: {}", ctx.channel().remoteAddress());
-        }
+    /**
+     * Gets the server name associated with a channel.
+     */
+    public String getServerName(Channel channel) {
+        return channelToServerName.get(channel);
     }
 }
