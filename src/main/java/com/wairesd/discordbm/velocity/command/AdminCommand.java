@@ -3,8 +3,8 @@ package com.wairesd.discordbm.velocity.command;
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;
 import com.wairesd.discordbm.velocity.DiscordBMV;
-import com.wairesd.discordbm.velocity.config.Messages;
-import com.wairesd.discordbm.velocity.config.Settings;
+import com.wairesd.discordbm.velocity.config.ConfigManager;
+import com.wairesd.discordbm.velocity.config.configurators.Messages;
 import com.wairesd.discordbm.velocity.util.Color;
 
 import java.util.stream.Collectors;
@@ -39,8 +39,9 @@ public class AdminCommand implements SimpleCommand {
                     source.sendMessage(Color.parse(Messages.getMessage("no-permission")));
                     return;
                 }
-                Settings.reload();
+                ConfigManager.ConfigureReload();
                 plugin.updateActivity();
+                plugin.getCommandManager().loadAndRegisterCommands();
                 source.sendMessage(Color.parse(Messages.getMessage("reload-success")));
                 break;
             case "commands":

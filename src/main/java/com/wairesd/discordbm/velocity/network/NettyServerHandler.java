@@ -2,7 +2,7 @@ package com.wairesd.discordbm.velocity.network;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.wairesd.discordbm.velocity.config.Settings;
+import com.wairesd.discordbm.velocity.config.configurators.Settings;
 import com.wairesd.discordbm.velocity.database.DatabaseManager;
 import com.wairesd.discordbm.velocity.discord.ResponseHandler;
 import com.wairesd.discordbm.velocity.model.RegisterMessage;

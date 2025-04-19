@@ -1,6 +1,6 @@
 package com.wairesd.discordbm.velocity.network;
 
-import com.wairesd.discordbm.velocity.config.Settings;
+import com.wairesd.discordbm.velocity.config.configurators.Settings;
 import com.wairesd.discordbm.velocity.database.DatabaseManager;
 import com.wairesd.discordbm.velocity.model.CommandDefinition;
 import io.netty.bootstrap.ServerBootstrap;

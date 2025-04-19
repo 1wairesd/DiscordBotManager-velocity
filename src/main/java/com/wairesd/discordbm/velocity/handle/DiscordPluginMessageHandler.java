@@ -2,7 +2,7 @@ package com.wairesd.discordbm.velocity.handle;
 
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.PluginMessageEvent;
-import com.wairesd.discordbm.velocity.config.Settings;
+import com.wairesd.discordbm.velocity.config.configurators.Settings;
 import org.slf4j.Logger;
 
 import java.nio.charset.StandardCharsets;

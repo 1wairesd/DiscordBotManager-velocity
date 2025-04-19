@@ -1,10 +1,10 @@
 package com.wairesd.discordbm.velocity.discord;
 
-import com.wairesd.discordbm.velocity.config.Settings;
+import com.wairesd.discordbm.velocity.config.configurators.Settings;
 import net.dv8tion.jda.api.EmbedBuilder;
 import org.slf4j.Logger;
 
-import java.awt.Color;
+import java.awt.*;
 import java.util.UUID;
 
 /**

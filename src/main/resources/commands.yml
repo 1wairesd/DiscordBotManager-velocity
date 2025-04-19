@@ -1,0 +1,16 @@
+# Example
+commands:
+  - name: "hello"
+    description: "Says hello to the user"
+    context: "server"
+    options:
+      - name: "target"
+        type: "STRING"
+        description: "Who to greet"
+        required: true
+    conditions:
+      - type: "permission"
+        role: "Admin"
+    actions:
+      - type: "send_message"
+        message: "Hello, {user}! You greeted {target}."

@@ -7,8 +7,9 @@ import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.wairesd.discordbm.velocity.command.AdminCommand;
-import com.wairesd.discordbm.velocity.config.Messages;
-import com.wairesd.discordbm.velocity.config.Settings;
+import com.wairesd.discordbm.velocity.command.build.CommandManager;
+import com.wairesd.discordbm.velocity.config.ConfigManager;
+import com.wairesd.discordbm.velocity.config.configurators.Settings;
 import com.wairesd.discordbm.velocity.database.DatabaseManager;
 import com.wairesd.discordbm.velocity.discord.DiscordBotListener;
 import com.wairesd.discordbm.velocity.discord.ResponseHandler;
@@ -31,6 +32,7 @@ public class DiscordBMV {
     private NettyServer nettyServer;
     private DiscordBotListener discordBotListener;
     private DatabaseManager dbManager;
+    private CommandManager commandManager;
 
     @Inject
     public DiscordBMV(Logger logger, @DataDirectory Path dataDirectory, ProxyServer proxy) {
@@ -41,8 +43,8 @@ public class DiscordBMV {
 
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
-        Settings.init(dataDirectory);
-        Messages.init(dataDirectory);
+        ConfigManager.init(dataDirectory);
+        ConfigManager.ConfigureReload();
 
         String dbPath = "jdbc:sqlite:" + dataDirectory.resolve("DiscordBMV.db").toString();
         dbManager = new DatabaseManager(dbPath);
@@ -77,10 +79,16 @@ public class DiscordBMV {
                     .awaitReady();
 
             nettyServer.setJda(jda);
+            commandManager = new CommandManager(nettyServer, jda); // Initialize CommandManager
+            commandManager.loadAndRegisterCommands(); // Load and register custom commands
             logger.info("Discord bot successfully started.");
         } catch (Exception e) {
             logger.error("Error initializing JDA: {}", e.getMessage(), e);
         }
+    }
+
+    public CommandManager getCommandManager() {
+        return commandManager;
     }
 
     private Activity createActivity() {
@@ -101,6 +109,5 @@ public class DiscordBMV {
         }
     }
 
-    public ProxyServer getProxy() { return proxy; }
     public NettyServer getNettyServer() { return nettyServer; }
 }

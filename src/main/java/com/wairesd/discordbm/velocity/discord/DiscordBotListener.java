@@ -2,16 +2,17 @@ package com.wairesd.discordbm.velocity.discord;
 
 import com.google.gson.Gson;
 import com.wairesd.discordbm.velocity.DiscordBMV;
-import com.wairesd.discordbm.velocity.config.Settings;
+import com.wairesd.discordbm.velocity.command.build.CommandExecutor;
+import com.wairesd.discordbm.velocity.config.configurators.Settings;
 import com.wairesd.discordbm.velocity.model.CommandDefinition;
 import com.wairesd.discordbm.velocity.model.RequestMessage;
 import com.wairesd.discordbm.velocity.network.NettyServer;
 import io.netty.channel.Channel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
+import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import org.slf4j.Logger;
 
 import java.util.HashMap;
@@ -22,15 +23,19 @@ import java.util.concurrent.ConcurrentHashMap;
 
 // Listens for Discord slash command interactions and forwards them to the Netty server.
 public class DiscordBotListener extends ListenerAdapter {
+    private final DiscordBMV plugin;
     private final NettyServer nettyServer;
     private final Gson gson = new Gson();
     private final ConcurrentHashMap<UUID, SlashCommandInteractionEvent> pendingRequests = new ConcurrentHashMap<>();
     private final Map<String, SelectionInfo> pendingSelections = new ConcurrentHashMap<>();
     private final Logger logger;
+    private final CommandExecutor commandExecutor;
 
     public DiscordBotListener(DiscordBMV plugin, NettyServer nettyServer, Logger logger) {
         this.nettyServer = nettyServer;
         this.logger = logger;
+        this.plugin = plugin;
+        this.commandExecutor = new CommandExecutor();
     }
 
     public ConcurrentHashMap<UUID, SlashCommandInteractionEvent> getPendingRequests() { return pendingRequests; }
@@ -42,7 +47,13 @@ public class DiscordBotListener extends ListenerAdapter {
         List<NettyServer.ServerInfo> servers = nettyServer.getServersForCommand(command);
 
         if (servers.isEmpty()) {
-            event.reply("Command unavailable.").setEphemeral(true).queue();
+            var customCommand = plugin.getCommandManager().getCommand(command);
+            if (customCommand != null) {
+                event.deferReply().queue(); // Defer reply for async execution
+                commandExecutor.execute(event, customCommand);
+            } else {
+                event.reply("Command unavailable.").setEphemeral(true).queue();
+            }
             return;
         }
 
