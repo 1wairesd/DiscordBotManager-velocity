@@ -1,8 +1,8 @@
-package com.wairesd.discordbotmanager.velocity.handle;
+package com.wairesd.discordbm.velocity.handle;
 
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.PluginMessageEvent;
-import com.wairesd.discordbotmanager.velocity.config.Settings;
+import com.wairesd.discordbm.velocity.config.Settings;
 import org.slf4j.Logger;
 
 import java.nio.charset.StandardCharsets;

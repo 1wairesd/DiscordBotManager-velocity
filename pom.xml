@@ -6,12 +6,12 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.wairesd.DiscordBotManager.velocity</groupId>
-    <artifactId>DiscordBotManager-velocity</artifactId>
+    <groupId>com.wairesd.discordbm.velocity</groupId>
+    <artifactId>DiscordBMV</artifactId>
     <version>1.0</version>
     <packaging>jar</packaging>
 
-    <name>DiscordBotManager</name>
+    <name>DiscordBMV</name>
 
     <properties>
         <java.version>17</java.version>

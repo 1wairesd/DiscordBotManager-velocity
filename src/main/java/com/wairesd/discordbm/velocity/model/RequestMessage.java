@@ -1,4 +1,4 @@
-package com.wairesd.discordbotmanager.velocity.model;
+package com.wairesd.discordbm.velocity.model;
 
 import java.util.Map;
 

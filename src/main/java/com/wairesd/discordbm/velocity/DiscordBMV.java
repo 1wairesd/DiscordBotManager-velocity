@@ -1,4 +1,4 @@
-package com.wairesd.discordbotmanager.velocity;
+package com.wairesd.discordbm.velocity;
 
 import com.google.inject.Inject;
 import com.velocitypowered.api.event.Subscribe;
@@ -6,13 +6,13 @@ import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
-import com.wairesd.discordbotmanager.velocity.command.AdminCommand;
-import com.wairesd.discordbotmanager.velocity.config.Messages;
-import com.wairesd.discordbotmanager.velocity.config.Settings;
-import com.wairesd.discordbotmanager.velocity.database.DatabaseManager;
-import com.wairesd.discordbotmanager.velocity.discord.DiscordBotListener;
-import com.wairesd.discordbotmanager.velocity.discord.ResponseHandler;
-import com.wairesd.discordbotmanager.velocity.network.NettyServer;
+import com.wairesd.discordbm.velocity.command.AdminCommand;
+import com.wairesd.discordbm.velocity.config.Messages;
+import com.wairesd.discordbm.velocity.config.Settings;
+import com.wairesd.discordbm.velocity.database.DatabaseManager;
+import com.wairesd.discordbm.velocity.discord.DiscordBotListener;
+import com.wairesd.discordbm.velocity.discord.ResponseHandler;
+import com.wairesd.discordbm.velocity.network.NettyServer;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
@@ -22,8 +22,8 @@ import org.slf4j.Logger;
 import java.nio.file.Path;
 import java.util.EnumSet;
 
-@Plugin(id = "discordbotmanager", name = "DiscordBotManager", version = "1.0", authors = {"wairesd"})
-public class DiscordBotManagerVelocity {
+@Plugin(id = "discordbmv", name = "DiscordBMV", version = "1.0", authors = {"wairesd"})
+public class DiscordBMV {
     private final Logger logger;
     private final Path dataDirectory;
     private final ProxyServer proxy;
@@ -33,7 +33,7 @@ public class DiscordBotManagerVelocity {
     private DatabaseManager dbManager;
 
     @Inject
-    public DiscordBotManagerVelocity(Logger logger, @DataDirectory Path dataDirectory, ProxyServer proxy) {
+    public DiscordBMV(Logger logger, @DataDirectory Path dataDirectory, ProxyServer proxy) {
         this.logger = logger;
         this.dataDirectory = dataDirectory;
         this.proxy = proxy;
@@ -44,14 +44,14 @@ public class DiscordBotManagerVelocity {
         Settings.init(dataDirectory);
         Messages.init(dataDirectory);
 
-        String dbPath = "jdbc:sqlite:" + dataDirectory.resolve("DiscordBotManager.db").toString();
+        String dbPath = "jdbc:sqlite:" + dataDirectory.resolve("DiscordBMV.db").toString();
         dbManager = new DatabaseManager(dbPath);
 
         nettyServer = new NettyServer(logger, dbManager);
         new Thread(nettyServer::start, "Netty-Server-Thread").start();
 
         proxy.getCommandManager().register(
-                proxy.getCommandManager().metaBuilder("discordbotmanager").build(),
+                proxy.getCommandManager().metaBuilder("discordBMV").build(),
                 new AdminCommand(this)
         );
 

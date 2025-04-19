@@ -1,4 +1,4 @@
-package com.wairesd.discordbotmanager.velocity.util;
+package com.wairesd.discordbm.velocity.util;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;

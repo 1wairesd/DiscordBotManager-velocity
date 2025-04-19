@@ -1,9 +1,9 @@
 {
-  "id": "discordbotmanager",
-  "name": "DiscordBotManager",
+  "id": "discordbmv",
+  "name": "DiscordBMV",
   "version": "1.0",
   "description": "Description of your plugin",
   "authors": ["1wairesd"],
   "dependencies": [],
-  "main": "com.wairesd.DiscordBotManager.velocity.DiscordBotManagerVelocity"
+  "main": "com.wairesd.discordbm.velocity.DiscordBMV"
 }

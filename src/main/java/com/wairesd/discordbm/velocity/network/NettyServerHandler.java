@@ -1,12 +1,12 @@
-package com.wairesd.discordbotmanager.velocity.network;
+package com.wairesd.discordbm.velocity.network;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.wairesd.discordbotmanager.velocity.config.Settings;
-import com.wairesd.discordbotmanager.velocity.database.DatabaseManager;
-import com.wairesd.discordbotmanager.velocity.discord.ResponseHandler;
-import com.wairesd.discordbotmanager.velocity.model.RegisterMessage;
-import com.wairesd.discordbotmanager.velocity.model.ResponseMessage;
+import com.wairesd.discordbm.velocity.config.Settings;
+import com.wairesd.discordbm.velocity.database.DatabaseManager;
+import com.wairesd.discordbm.velocity.discord.ResponseHandler;
+import com.wairesd.discordbm.velocity.model.RegisterMessage;
+import com.wairesd.discordbm.velocity.model.ResponseMessage;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import org.slf4j.Logger;

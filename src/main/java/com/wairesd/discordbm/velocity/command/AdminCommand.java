@@ -1,11 +1,11 @@
-package com.wairesd.discordbotmanager.velocity.command;
+package com.wairesd.discordbm.velocity.command;
 
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;
-import com.wairesd.discordbotmanager.velocity.DiscordBotManagerVelocity;
-import com.wairesd.discordbotmanager.velocity.config.Messages;
-import com.wairesd.discordbotmanager.velocity.config.Settings;
-import com.wairesd.discordbotmanager.velocity.util.Color;
+import com.wairesd.discordbm.velocity.DiscordBMV;
+import com.wairesd.discordbm.velocity.config.Messages;
+import com.wairesd.discordbm.velocity.config.Settings;
+import com.wairesd.discordbm.velocity.util.Color;
 
 import java.util.stream.Collectors;
 
@@ -13,9 +13,9 @@ import java.util.stream.Collectors;
  * Handles the /discordbotmanager command on Velocity for reloading settings.
  */
 public class AdminCommand implements SimpleCommand {
-    private final DiscordBotManagerVelocity plugin;
+    private final DiscordBMV plugin;
 
-    public AdminCommand(DiscordBotManagerVelocity plugin) {
+    public AdminCommand(DiscordBMV plugin) {
         this.plugin = plugin;
     }
 

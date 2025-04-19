@@ -1,6 +1,6 @@
-package com.wairesd.discordbotmanager.velocity.discord;
+package com.wairesd.discordbm.velocity.discord;
 
-import com.wairesd.discordbotmanager.velocity.config.Settings;
+import com.wairesd.discordbm.velocity.config.Settings;
 import net.dv8tion.jda.api.EmbedBuilder;
 import org.slf4j.Logger;
 

@@ -1,4 +1,4 @@
-package com.wairesd.discordbotmanager.velocity.database;
+package com.wairesd.discordbm.velocity.database;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

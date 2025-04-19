@@ -1,4 +1,4 @@
-package com.wairesd.discordbotmanager.velocity.secret;
+package com.wairesd.discordbm.velocity.secret;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,11 +1,11 @@
-package com.wairesd.discordbotmanager.velocity.discord;
+package com.wairesd.discordbm.velocity.discord;
 
 import com.google.gson.Gson;
-import com.wairesd.discordbotmanager.velocity.DiscordBotManagerVelocity;
-import com.wairesd.discordbotmanager.velocity.config.Settings;
-import com.wairesd.discordbotmanager.velocity.model.CommandDefinition;
-import com.wairesd.discordbotmanager.velocity.model.RequestMessage;
-import com.wairesd.discordbotmanager.velocity.network.NettyServer;
+import com.wairesd.discordbm.velocity.DiscordBMV;
+import com.wairesd.discordbm.velocity.config.Settings;
+import com.wairesd.discordbm.velocity.model.CommandDefinition;
+import com.wairesd.discordbm.velocity.model.RequestMessage;
+import com.wairesd.discordbm.velocity.network.NettyServer;
 import io.netty.channel.Channel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -28,7 +28,7 @@ public class DiscordBotListener extends ListenerAdapter {
     private final Map<String, SelectionInfo> pendingSelections = new ConcurrentHashMap<>();
     private final Logger logger;
 
-    public DiscordBotListener(DiscordBotManagerVelocity plugin, NettyServer nettyServer, Logger logger) {
+    public DiscordBotListener(DiscordBMV plugin, NettyServer nettyServer, Logger logger) {
         this.nettyServer = nettyServer;
         this.logger = logger;
     }

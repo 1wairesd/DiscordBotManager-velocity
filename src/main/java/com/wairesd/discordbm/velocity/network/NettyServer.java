@@ -1,8 +1,8 @@
-package com.wairesd.discordbotmanager.velocity.network;
+package com.wairesd.discordbm.velocity.network;
 
-import com.wairesd.discordbotmanager.velocity.config.Settings;
-import com.wairesd.discordbotmanager.velocity.database.DatabaseManager;
-import com.wairesd.discordbotmanager.velocity.model.CommandDefinition;
+import com.wairesd.discordbm.velocity.config.Settings;
+import com.wairesd.discordbm.velocity.database.DatabaseManager;
+import com.wairesd.discordbm.velocity.model.CommandDefinition;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
